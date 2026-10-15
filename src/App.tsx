@@ -13,8 +13,6 @@ type Transaction = {
 }
 
 
-const initialTransactions: Transaction[] = [
-]
 
 
 
@@ -2483,12 +2481,7 @@ useEffect(() => {
 
 const currentHour = new Date().getHours()
 
-const greeting =
-  currentHour < 12
-    ? t('goodMorning')
-    : currentHour < 17
-      ? t('goodAfternoon')
-      : t('goodEvening')
+
   const [showBudgetModal, setShowBudgetModal] = useState(false)
   const [budgetInput, setBudgetInput] = useState('')
   const [transactions, setTransactions] = useState<Transaction[]>([]) 
@@ -2699,53 +2692,6 @@ const spendingByPeriod = (() => {
     )
   })
 
-
-const analyticsTransactions = transactions.filter((item) => {
-  const now = new Date()
-  let date: Date
-
-  if (item.date === 'Today') {
-    date = now
-  } else if (/^\d{4}-\d{2}-\d{2}$/.test(item.date)) {
-    date = new Date(`${item.date}T12:00:00`)
-  } else {
-    date = new Date(item.date)
-    if (Number.isNaN(date.getTime())) return false
-  }
-
-  if (selectedPeriod === 'all-time') return true
-
-  if (selectedPeriod === 'last-month') {
-    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-    return (
-      date.getMonth() === lastMonth.getMonth() &&
-      date.getFullYear() === lastMonth.getFullYear()
-    )
-  }
-
-  return (
-    date.getMonth() === now.getMonth() &&
-    date.getFullYear() === now.getFullYear()
-  )
-})
-
-const analyticsCategories = Object.entries(
-  analyticsTransactions.reduce<Record<string, number>>((totals, item) => {
-    totals[item.category] = (totals[item.category] ?? 0) + item.amount
-    return totals
-  }, {})
-).map(([name, amount]) => ({
-  name,
-  amount,
-  color: categoryColors[name] ?? '#94a3b8',
-}))
-
-const analyticsTotal = analyticsCategories.reduce(
-  (sum, item) => sum + item.amount,
-  0
-)
-
-
   const periods = [
     { day: '01–05', start: 1, end: 5 },
     { day: '06–10', start: 6, end: 10 },
@@ -2795,12 +2741,7 @@ async function addTransaction(event: React.FormEvent<HTMLFormElement>) {
     return
   }
 
-  const icons: Record<string, string> = {
-    Food: '🍽️',
-    Shopping: '🛍️',
-    Transport: '🚕',
-    Other: '📌',
-  }
+  
 
   try {
     const response = await fetch(`${API_URL}/expenses`, {
