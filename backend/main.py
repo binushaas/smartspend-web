@@ -12,7 +12,7 @@ from pwdlib import PasswordHash
 from sqlalchemy import Column, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import Session
 
-from database import Base, engine, SessionLocal
+from database import Base, engine, SessionLocal, DATABASE_URL
 
 
 class User(Base):
@@ -38,12 +38,15 @@ class Expense(Base):
 Base.metadata.create_all(bind=engine)
 
 # Migrate an existing SQLite database without deleting its data.
-with engine.begin() as connection:
-    columns = connection.exec_driver_sql("PRAGMA table_info(expenses)").fetchall()
-    if "user_id" not in {column[1] for column in columns}:
-        connection.exec_driver_sql(
-            "ALTER TABLE expenses ADD COLUMN user_id INTEGER REFERENCES users(id)"
-        )
+if DATABASE_URL.startswith("sqlite"):
+    with engine.begin() as connection:
+        columns = connection.exec_driver_sql(
+            "PRAGMA table_info(expenses)"
+        ).fetchall()
+        if "user_id" not in {column[1] for column in columns}:
+            connection.exec_driver_sql(
+                "ALTER TABLE expenses ADD COLUMN user_id INTEGER REFERENCES users(id)"
+            )
 
 
 app = FastAPI(title="SmartSpend API")
@@ -56,6 +59,7 @@ app.add_middleware(
     "http://127.0.0.1:5174",
     "http://localhost:5175",
     "http://127.0.0.1:5175",
+    "https://smartspend-web-ashy.vercel.app",
 ],
     allow_credentials=True,
     allow_methods=["*"],
