@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 
-const API_URL = 'http://127.0.0.1:8000'
+const API_URL = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000';
 
 type Transaction = {
   id: number
@@ -2741,7 +2741,7 @@ async function addTransaction(event: React.FormEvent<HTMLFormElement>) {
     return
   }
 
-  
+
 
   try {
     const response = await fetch(`${API_URL}/expenses`, {
