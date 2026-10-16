@@ -10,10 +10,18 @@ connect_args = (
     else {}
 )
 
-engine = create_engine(
-    DATABASE_URL,
-    connect_args=connect_args,
-)
+if DATABASE_URL.startswith("sqlite"):
+    engine = create_engine(
+        DATABASE_URL,
+        connect_args=connect_args,
+    )
+else:
+    engine = create_engine(
+        DATABASE_URL,
+        connect_args=connect_args,
+        pool_pre_ping=True,
+        pool_recycle=300,
+    )
 
 SessionLocal = sessionmaker(
     autocommit=False,
