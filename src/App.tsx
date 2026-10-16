@@ -2442,11 +2442,22 @@ const categoryLabel = (value: string) => {
   return t(keys[value] ?? value)
 }
 const [profileName, setProfileName] = useState(() => {
-  return localStorage.getItem('smartspend-profile-name') || 'Binusha'
+  try {
+    const savedUser = localStorage.getItem('smartspend_user')
+    return savedUser ? JSON.parse(savedUser).name || '' : ''
+  } catch {
+    return ''
+  }
 })
 
 const [profileEmail, setProfileEmail] = useState(() => {
-  return localStorage.getItem('smartspend-profile-email') || ''
+  const savedUser = localStorage.getItem('smartspend_user')
+  if (!savedUser) return ''
+  try {
+    return JSON.parse(savedUser).email || ''
+  } catch {
+    return ''
+  }
 })
 
 const [helpMessage, setHelpMessage] = useState('')
@@ -3032,7 +3043,7 @@ async function saveEditedExpense(
     <span className="account-avatar">{currentUser.name.charAt(0).toUpperCase()}</span>
 
     <span className="account-profile-info">
-      <strong>{profileName}</strong>
+      <strong>{currentUser?.name || profileName}</strong>
       <small>{t('personalWorkspace')}</small>
     </span>
   </button>
@@ -3508,13 +3519,54 @@ async function saveEditedExpense(
 
       <form
         className="settings-form"
-        onSubmit={(event) => {
-          event.preventDefault()
-          localStorage.setItem('smartspend-profile-name', profileName.trim())
-          localStorage.setItem('smartspend-profile-email', profileEmail.trim())
-          setProfileName(profileName.trim())
-          setSavedProfile(true)
-        }}
+        
+onSubmit={async (event) => {
+  event.preventDefault()
+  setSavedProfile(false)
+
+  const token = localStorage.getItem('smartspend_token')
+
+  if (!token) {
+    console.error('Please log in again.')
+    return
+  }
+
+  try {
+    const response = await fetch(`${API_URL}/me`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        name: profileName.trim(),
+        email: profileEmail.trim(),
+      }),
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(data.detail || 'Could not save profile')
+    }
+
+    localStorage.setItem('smartspend_user', JSON.stringify(data))
+    setCurrentUser(data)
+    setProfileName(data.name)
+    setProfileEmail(data.email)
+    localStorage.setItem('smartspend-profile-name', data.name)
+    localStorage.setItem('smartspend-profile-email', data.email)
+    setSavedProfile(true)
+  } catch (error) {
+    console.error('Profile update failed:', error)
+    alert(
+      error instanceof Error
+        ? error.message
+        : 'Could not save profile. Please try again.'
+    )
+  }
+}}
+
       >
         <label>
           {t('displayName')}

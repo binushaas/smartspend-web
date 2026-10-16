@@ -85,6 +85,9 @@ class RegisterRequest(BaseModel):
     name: str = Field(min_length=1, max_length=100)
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)
+class ProfileUpdate(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+    email: EmailStr
 
 
 def get_db():
@@ -181,6 +184,41 @@ def login_user(
 @app.get("/me")
 def get_me(current_user: User = Depends(get_current_user)):
     return {"id": current_user.id, "name": current_user.name, "email": current_user.email}
+@app.put("/me")
+def update_me(
+    profile: ProfileUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    name = profile.name.strip()
+    email = str(profile.email).strip().lower()
+
+    if not name:
+        raise HTTPException(status_code=422, detail="Name cannot be blank")
+
+    existing_user = (
+        db.query(User)
+        .filter(User.email == email, User.id != current_user.id)
+        .first()
+    )
+
+    if existing_user:
+        raise HTTPException(
+            status_code=409,
+            detail="This email is already registered to another account",
+        )
+
+    current_user.name = name
+    current_user.email = email
+
+    db.commit()
+    db.refresh(current_user)
+
+    return {
+        "id": current_user.id,
+        "name": current_user.name,
+        "email": current_user.email,
+    }
 
 
 @app.get("/expenses")
