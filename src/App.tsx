@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000';
+const API_URL = import.meta.env.VITE_API_URL ?? 'https://smartspend-api-me4k.onrender.com';
 
 type Transaction = {
   id: number
@@ -2643,10 +2643,23 @@ async function handleAuthSubmit(e: React.FormEvent<HTMLFormElement>) {
     0
   )
 
-const [budget, setBudget] = useState<number>(() => {
-  const saved = localStorage.getItem('smartspend-budget')
-  return saved ? Number(saved) : 12000
-})
+  const [budget, setBudget] = useState<number>(() => {
+    const saved = localStorage.getItem(`smartspend-budget-${currentUser?.id}`)
+    return saved ? Number(saved) : 12000
+  })
+  
+  useEffect(() => {
+    if (!currentUser) {
+      setBudget(12000)
+      return
+    }
+  
+    const saved = localStorage.getItem(
+      `smartspend-budget-${currentUser.id}`
+    )
+  
+    setBudget(saved ? Number(saved) : 12000)
+  }, [currentUser?.id])
 
 const budgetPercent = Math.min(
   100,
@@ -3435,10 +3448,11 @@ async function saveEditedExpense(
           }
 
           setBudget(value)
-          localStorage.setItem('smartspend-budget', String(value))
+          localStorage.setItem(`smartspend-budget-${currentUser?.id}`, String(value))
           setShowBudgetModal(false)
         }}
       >
+      
         <label htmlFor="budget-input">{t('monthlyBudgetLabel')} (₹)</label>
 
         <input
